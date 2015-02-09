@@ -1,8 +1,10 @@
 # STUN IP Address requests for WebRTC
 
-Demo: https://diafygi.github.io/webrtc-ips/
+Demo: https://mullvad.github.io/webrtc-ips/
 
 ### What this does
+
+Same thing as Daniel Roeslers PoC, except using stun.stunprotocol.org as STUN server.
 
 Firefox and Chrome have implemented WebRTC that allow requests to STUN servers be made that will return the local and public IP addresses for the user. These request results are available to javascript, so you can now obtain a users local and public IP addresses in javascript. This demo is an example implementation of that.
 
@@ -44,11 +46,11 @@ function getIPs(callback){
     //firefox already has a default stun server in about:config
     //    media.peerconnection.default_iceservers =
     //    [{"url": "stun:stun.services.mozilla.com"}]
-    var servers = undefined;
+    var servers = {iceServers: [{url: "stun:stun.stunprotocol.org"}]};
 
     //add same stun server for chrome
     if(window.webkitRTCPeerConnection)
-        servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
+        servers = {iceServers: [{urls: "stun:stun.stunprotocol.org"}]};
 
     //construct a new RTCPeerConnection
     var pc = new RTCPeerConnection(servers, mediaConstraints);

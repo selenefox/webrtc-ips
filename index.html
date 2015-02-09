@@ -6,8 +6,8 @@
     <body>
         <h4>
             Demo for:
-            <a href="https://github.com/diafygi/webrtc-ips">
-                https://github.com/diafygi/webrtc-ips
+            <a href="https://github.com/mullvad/webrtc-ips">
+                https://github.com/mullvad/webrtc-ips
             </a>
         </h4>
         <p>
@@ -51,11 +51,11 @@
                 //firefox already has a default stun server in about:config
                 //    media.peerconnection.default_iceservers =
                 //    [{"url": "stun:stun.services.mozilla.com"}]
-                var servers = undefined;
+                var servers = {iceServers: [{url: "stun:stun.stunprotocol.org"}]};
 
                 //add same stun server for chrome
                 if(window.webkitRTCPeerConnection)
-                    servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
+                    servers = {iceServers: [{urls: "stun:stun.stunprotocol.org"}]};
 
                 //construct a new RTCPeerConnection
                 var pc = new RTCPeerConnection(servers, mediaConstraints);
