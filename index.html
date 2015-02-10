@@ -6,24 +6,72 @@
     <body>
         <h4>
             Demo for:
-            <a href="https://github.com/mullvad/webrtc-ips">
-                https://github.com/mullvad/webrtc-ips
+            <a href="https://github.com/steely-glint/webrtc-ips">
+                https://github.com/steely-glint/webrtc-ips
             </a>
         </h4>
-	<p>Does the same thing as Daniel Roeslers PoC, except uses stun.stunprotocol.org as STUN server.</p>
+	<p>Does the same thing as Daniel Roeslers PoC, 
         <p>
-            This demo secretly makes requests to STUN servers that can log your
-            request. These requests do not show up in developer consoles and
-            cannot be blocked by browser plugins (AdBlock, Ghostery, etc.).
+	This demo uses webRTC to display the local and public IP addesses.
         </p>
-        <h4>Your local IP addresses:</h4>
+        <h4>IP addresses on this machine:</h4>
         <ul></ul>
-        <h4>Your public IP addresses:</h4>
+        <h4>Public IP addresses of NAT</h4>
         <ul></ul>
         <script>
+
+    /*
+     candidate-attribute   = "candidate" ":" foundation SP component-id SP
+     transport SP
+     priority SP
+     connection-address SP     ;from RFC 4566
+     port         ;port from RFC 4566
+     SP cand-type
+     [SP rel-addr]
+     [SP rel-port]
+     *(SP extension-att-name SP
+     extension-att-value)
+     
+     foundation            = 1*32ice-char
+     component-id          = 1*5DIGIT
+     transport             = "UDP" / transport-extension
+     transport-extension   = token              ; from RFC 3261
+     priority              = 1*10DIGIT
+     cand-type             = "typ" SP candidate-types
+     candidate-types       = "host" / "srflx" / "prflx" / "relay" / token
+     rel-addr              = "raddr" SP connection-address
+     rel-port              = "rport" SP port
+     extension-att-name    = byte-string    ;from RFC 4566
+     extension-att-value   = byte-string
+     ice-char              = ALPHA / DIGIT / "+" / "/"
+     */
+     function parseCandidate (can) {
+        var params = can.candidate.substring(can.candidate.indexOf(":") + 1).split(" ");
+        candidate = {
+            foundation: params[0],
+            component: params[1],
+            protocol: params[2],
+            priority: params[3],
+            ip: params[4],
+            port: params[5]
+        };
+        var index = 6;
+        while (index + 1 <= params.length) {
+            if (params[index] == "typ")
+                candidate["type"] = params[index + 1];
+            if (params[index] == "generation")
+                candidate["generation"] = params[index + 1];
+            if (params[index] == "username")
+                candidate["username"] = params[index + 1];
+            if (params[index] == "password")
+                candidate["password"] = params[index + 1];
+
+            index += 2;
+        }
+
+        return candidate;
+    }
             //get the IP addresses associated with an account
-            function getIPs(callback){
-                var ip_dups = {};
 
                 //compatibility for firefox and chrome
                 var RTCPeerConnection = window.RTCPeerConnection
@@ -44,43 +92,44 @@
                         || window.webkitRTCPeerConnection;
                 }
 
-                //minimal requirements for data connection
-                var mediaConstraints = {
-                    optional: [{RtpDataChannels: true}]
-                };
 
-                //firefox already has a default stun server in about:config
-                //    media.peerconnection.default_iceservers =
-                //    [{"url": "stun:stun.services.mozilla.com"}]
-                var servers = {iceServers: [{url: "stun:stun.stunprotocol.org"}]};
+		var constraints ={ optional : [{googIPv6:true}]};
+                var servers = {iceServers: [
+			{url: "turn:146.148.121.175:3479?transport=udp"},
+			{url: "turn:146.148.121.175:3478?transport=udp"},
+			{url: "turn:146.148.121.175:3478?transport=tcp"},
+			{url: "turn:146.148.121.175:3479?transport=tcp"},
+			{url: "stun:stun.freeswitch.org"}]};
 
-                //add same stun server for chrome
-                if(window.webkitRTCPeerConnection)
-                    servers = {iceServers: [{urls: "stun:stun.stunprotocol.org"}]};
 
                 //construct a new RTCPeerConnection
-                var pc = new RTCPeerConnection(servers, mediaConstraints);
+                var pc = new RTCPeerConnection(servers,constraints);
 
+                var ip_cands = {};
                 //listen for candidate events
                 pc.onicecandidate = function(ice){
 
                     //skip non-candidate events
                     if(ice.candidate){
-
-                        //match just the IP address
-                        var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/
-                        var ip_addr = ip_regex.exec(ice.candidate.candidate)[1];
-
-                        //remove duplicates
-                        if(ip_dups[ip_addr] === undefined)
-                            callback(ip_addr);
-
-                        ip_dups[ip_addr] = true;
+		       var candidate = parseCandidate(ice.candidate);
+                       console.log(JSON.stringify(candidate));
+                       var iket = candidate.ip +"-"+candidate.type;
+		       if (ip_cands[iket] === undefined ) {
+                          var li = document.createElement("li");
+                          li.textContent = candidate.ip;
+		          if (candidate.type == "host"){
+			   document.getElementsByTagName("ul")[0].appendChild(li);
+                          } 
+                          if (candidate.type == "srflx"){
+			     document.getElementsByTagName("ul")[1].appendChild(li);
+                          }
+                       }
+                       ip_cands[iket] = true;
                     }
                 };
 
                 //create a bogus data channel
-                pc.createDataChannel("");
+                pc.createDataChannel("teacup");
 
                 //create an offer sdp
                 pc.createOffer(function(result){
@@ -89,21 +138,7 @@
                     pc.setLocalDescription(result, function(){}, function(){});
 
                 }, function(){});
-            }
 
-            //insert IP addresses into the page
-            getIPs(function(ip){
-                var li = document.createElement("li");
-                li.textContent = ip;
-
-                //local IPs
-                if (ip.match(/^(192\.168\.|169\.254\.|10\.|172\.(1[6-9]|2\d|3[01]))/))
-                    document.getElementsByTagName("ul")[0].appendChild(li);
-
-                //assume the rest are public IPs
-                else
-                    document.getElementsByTagName("ul")[1].appendChild(li);
-            });
         </script>
     </body>
 </html>
