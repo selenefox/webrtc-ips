@@ -95,11 +95,15 @@
 
 		var constraints ={ optional : [{googIPv6:true}]};
                 var servers = {iceServers: [
-			{url: "turn:146.148.121.175:3479?transport=udp"},
-			{url: "turn:146.148.121.175:3478?transport=udp"},
-			{url: "turn:146.148.121.175:3478?transport=tcp"},
-			{url: "turn:146.148.121.175:3479?transport=tcp"},
-			{url: "stun:stun.freeswitch.org"}]};
+			{url: "stun:146.148.121.175:3479"},
+			{url: "turn:146.148.121.175:3479?transport=udp",
+			 username:"test",credential:"tester"},
+			{url: "turn:146.148.121.175:3478?transport=udp",
+			 username:"test",credential:"tester"},
+			{url: "turn:146.148.121.175:3478?transport=tcp",
+			 username:"test",credential:"tester"},
+			{url: "turn:146.148.121.175:3479?transport=tcp",
+			 username:"test",credential:"tester"}]};
 
 
                 //construct a new RTCPeerConnection
