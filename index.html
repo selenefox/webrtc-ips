@@ -65,6 +65,10 @@
                 candidate["username"] = params[index + 1];
             if (params[index] == "password")
                 candidate["password"] = params[index + 1];
+            if (params[index] == "raddr")
+                candidate["rel-addr"] = params[index + 1];
+            if (params[index] == "rport")
+                candidate["rel-port"] = params[index + 1];
 
             index += 2;
         }
@@ -125,6 +129,10 @@
 			   document.getElementsByTagName("ul")[0].appendChild(li);
                           } 
                           if (candidate.type == "srflx"){
+			     document.getElementsByTagName("ul")[1].appendChild(li);
+                          }
+                          if (candidate.type == "relay"){
+                              li.textContent = candidate["rel-addr"] + ' via TURN';
 			     document.getElementsByTagName("ul")[1].appendChild(li);
                           }
                        }
