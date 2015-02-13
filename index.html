@@ -10,9 +10,9 @@
                 https://github.com/steely-glint/webrtc-ips
             </a>
         </h4>
-	<p>Does the same thing as Daniel Roeslers PoC, 
+        <p>Does the same thing as Daniel Roeslers PoC, 
         <p>
-	This demo uses webRTC to display the local and public IP addesses.
+            This demo uses webRTC to display the local and public IP addesses.
         </p>
         <h4>IP addresses on this machine:</h4>
         <ul></ul>
@@ -20,136 +20,157 @@
         <ul></ul>
         <script>
 
-    /*
-     candidate-attribute   = "candidate" ":" foundation SP component-id SP
-     transport SP
-     priority SP
-     connection-address SP     ;from RFC 4566
-     port         ;port from RFC 4566
-     SP cand-type
-     [SP rel-addr]
-     [SP rel-port]
-     *(SP extension-att-name SP
-     extension-att-value)
-     
-     foundation            = 1*32ice-char
-     component-id          = 1*5DIGIT
-     transport             = "UDP" / transport-extension
-     transport-extension   = token              ; from RFC 3261
-     priority              = 1*10DIGIT
-     cand-type             = "typ" SP candidate-types
-     candidate-types       = "host" / "srflx" / "prflx" / "relay" / token
-     rel-addr              = "raddr" SP connection-address
-     rel-port              = "rport" SP port
-     extension-att-name    = byte-string    ;from RFC 4566
-     extension-att-value   = byte-string
-     ice-char              = ALPHA / DIGIT / "+" / "/"
-     */
-     function parseCandidate (can) {
-        var params = can.candidate.substring(can.candidate.indexOf(":") + 1).split(" ");
-        candidate = {
-            foundation: params[0],
-            component: params[1],
-            protocol: params[2],
-            priority: params[3],
-            ip: params[4],
-            port: params[5]
-        };
-        var index = 6;
-        while (index + 1 <= params.length) {
-            if (params[index] == "typ")
-                candidate["type"] = params[index + 1];
-            if (params[index] == "generation")
-                candidate["generation"] = params[index + 1];
-            if (params[index] == "username")
-                candidate["username"] = params[index + 1];
-            if (params[index] == "password")
-                candidate["password"] = params[index + 1];
-            if (params[index] == "raddr")
-                candidate["rel-addr"] = params[index + 1];
-            if (params[index] == "rport")
-                candidate["rel-port"] = params[index + 1];
+            /* sdp parser segment derived from Phono with original license quoted here 
+             *!
+             * Copyright 2013 Voxeo Labs, Inc.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License"); you
+             * may not use this file except in compliance with the License.
+             *
+             * You may obtain a copy of the License at
+             *
+             *   http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+             * implied. See the License for the specific language governing
+             * permissions and limitations under the License.
+             *
+             candidate - attribute = "candidate" ":" foundation SP component - id SP
+             transport SP
+             priority SP
+             connection - address SP; from RFC 4566
+             port; port from RFC 4566
+             SP cand - type
+             [SP rel - addr]
+             [SP rel - port]
+             * (SP extension - att - name SP
+             extension - att - value)
+             
+             foundation = 1 * 32ice - char
+             component - id = 1 * 5DIGIT
+             transport = "UDP" / transport - extension
+             transport - extension = token; from RFC 3261
+             priority = 1 * 10DIGIT
+             cand - type = "typ" SP candidate - types
+             candidate - types = "host" / "srflx" / "prflx" / "relay" / token
+             rel - addr = "raddr" SP connection - address
+             rel - port = "rport" SP port
+             extension - att - name = byte - string; from RFC 4566
+             extension - att - value = byte - string
+             ice - char = ALPHA / DIGIT / "+" / "/"
+             
+             */
+            function parseCandidate(can) {
+                var params = can.candidate.substring(can.candidate.indexOf(":") + 1).split(" ");
+                candidate = {
+                    foundation: params[0],
+                    component: params[1],
+                    protocol: params[2],
+                    priority: params[3],
+                    ip: params[4],
+                    port: params[5]
+                };
+                var index = 6;
+                while (index + 1 <= params.length) {
+                    if (params[index] == "typ")
+                        candidate["type"] = params[index + 1];
+                    if (params[index] == "generation")
+                        candidate["generation"] = params[index + 1];
+                    if (params[index] == "username")
+                        candidate["username"] = params[index + 1];
+                    if (params[index] == "password")
+                        candidate["password"] = params[index + 1];
+                    if (params[index] == "raddr")
+                        candidate["rel-addr"] = params[index + 1];
+                    if (params[index] == "rport")
+                        candidate["rel-port"] = params[index + 1];
 
-            index += 2;
-        }
+                    index += 2;
+                }
 
-        return candidate;
-    }
+                return candidate;
+            }
             //get the IP addresses associated with an account
 
-                //compatibility for firefox and chrome
-                var RTCPeerConnection = window.RTCPeerConnection
+            //compatibility for firefox and chrome
+            var RTCPeerConnection = window.RTCPeerConnection
                     || window.mozRTCPeerConnection
                     || window.webkitRTCPeerConnection;
 
-                //bypass naive webrtc blocking
-                if (!RTCPeerConnection) {
-                    var iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                    var win = iframe.contentWindow;
-                    window.RTCPeerConnection = win.RTCPeerConnection;
-                    window.mozRTCPeerConnection = win.mozRTCPeerConnection;
-                    window.webkitRTCPeerConnection = win.webkitRTCPeerConnection;
-                    RTCPeerConnection = window.RTCPeerConnection
+            //bypass naive webrtc blocking
+            if (!RTCPeerConnection) {
+                var iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                var win = iframe.contentWindow;
+                window.RTCPeerConnection = win.RTCPeerConnection;
+                window.mozRTCPeerConnection = win.mozRTCPeerConnection;
+                window.webkitRTCPeerConnection = win.webkitRTCPeerConnection;
+                RTCPeerConnection = window.RTCPeerConnection
                         || window.mozRTCPeerConnection
                         || window.webkitRTCPeerConnection;
-                }
+            }
 
 
-		var constraints ={ optional : [{googIPv6:true}]};
-                var servers = {iceServers: [
-			{url: "stun:146.148.121.175:3479"},
-			{url: "turn:146.148.121.175:3479?transport=udp",
-			 username:"test",credential:"tester"},
-			{url: "turn:146.148.121.175:3478?transport=udp",
-			 username:"test",credential:"tester"},
-			{url: "turn:146.148.121.175:3478?transport=tcp",
-			 username:"test",credential:"tester"},
-			{url: "turn:146.148.121.175:3479?transport=tcp",
-			 username:"test",credential:"tester"}]};
+            var constraints = {optional: [{googIPv6: true}]};
+            var servers = {iceServers: [
+                    {url: "stun:146.148.121.175:443"},
+                    {url: "turn:146.148.121.175:3478?transport=udp",
+                        username: "test", credential: "tester"},
+                    {url: "turn:146.148.121.175:3478?transport=tcp",
+                        username: "test", credential: "tester"},
+                    {url: "turns:146.148.121.175:443?transport=tcp",
+                        username: "test", credential: "tester"},
+                    {url: "turns:146.148.121.175:443?transport=udp",
+                        username: "test", credential: "tester"}
+                ]};
 
 
-                //construct a new RTCPeerConnection
-                var pc = new RTCPeerConnection(servers,constraints);
+            //construct a new RTCPeerConnection
+            var pc = new RTCPeerConnection(servers, constraints);
 
-                var ip_cands = {};
-                //listen for candidate events
-                pc.onicecandidate = function(ice){
+            var ip_cands = {};
+            //listen for candidate events
+            pc.onicecandidate = function(ice) {
 
-                    //skip non-candidate events
-                    if(ice.candidate){
-		       var candidate = parseCandidate(ice.candidate);
-                       console.log(JSON.stringify(candidate));
-                       var iket = candidate.ip +"-"+candidate.type;
-		       if (ip_cands[iket] === undefined ) {
-                          var li = document.createElement("li");
-                          li.textContent = candidate.ip;
-		          if (candidate.type == "host"){
-			   document.getElementsByTagName("ul")[0].appendChild(li);
-                          } 
-                          if (candidate.type == "srflx"){
-			     document.getElementsByTagName("ul")[1].appendChild(li);
-                          }
-                          if (candidate.type == "relay"){
-                              li.textContent = candidate["rel-addr"] + ' via TURN';
-			     document.getElementsByTagName("ul")[1].appendChild(li);
-                          }
-                       }
-                       ip_cands[iket] = true;
+                //skip non-candidate events
+                if (ice.candidate) {
+                    var candidate = parseCandidate(ice.candidate);
+                    console.log(JSON.stringify(candidate));
+                    var iket = candidate.ip + "-" + candidate.type;
+                    if (ip_cands[iket] === undefined) {
+                        var li = document.createElement("li");
+                        li.textContent = candidate.ip;
+                        if (candidate.type == "host") {
+                            document.getElementsByTagName("ul")[0].appendChild(li);
+                        }
+                        if (candidate.type == "srflx") {
+                            document.getElementsByTagName("ul")[1].appendChild(li);
+                        }
+                        if (candidate.type == "relay") {
+                            li.textContent = candidate["rel-addr"] + ' via TURN';
+                            document.getElementsByTagName("ul")[1].appendChild(li);
+                        }
                     }
-                };
+                    ip_cands[iket] = true;
+                }
+            };
 
-                //create a bogus data channel
-                pc.createDataChannel("teacup");
+            //create a bogus data channel
+            pc.createDataChannel("teacup");
 
-                //create an offer sdp
-                pc.createOffer(function(result){
+            //create an offer sdp
+            pc.createOffer(function(result) {
 
-                    //trigger the stun server request
-                    pc.setLocalDescription(result, function(){}, function(){});
+                //trigger the stun server request
+                pc.setLocalDescription(result, function() {
+                }, function() {
+                });
 
-                }, function(){});
+            }, function() {
+            });
 
         </script>
     </body>
